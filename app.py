@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 from werkzeug.utils import secure_filename
 import os
+from auth import auth_bp, create_tables
 
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -9,6 +10,8 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
+app.register_blueprint(auth_bp)
+
 def init_db():
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
@@ -95,5 +98,6 @@ def edit_item(item_id):
 
 
 if __name__ == '__main__':
+    create_tables()
     init_db()
     app.run(debug=True, port=5000)
