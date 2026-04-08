@@ -39,8 +39,19 @@ I am using it to learn:
 ---
 
 ## 🖥️ How to Run Locally
-
 1. Clone the repository:
-```bash
 git clone https://github.com/YOUR_USERNAME/thrifting-app.git
 cd thrifting-app
+
+2. Create and activate a virtual environment:
+bash 
+python -m venv venv
+venv\Scripts\activate   # Windows
+
+3. Install dependencies:
+pip install flask
+
+4. Run the app:
+python app.py
+
+## Screenshots📷
