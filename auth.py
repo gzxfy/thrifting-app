@@ -37,6 +37,10 @@ def register():
     conn.close()
     return render_template('register.html', error=error)
 
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    return render_template('login.html')
+
 if __name__ == '__main__':
     create_tables()
     app.run(debug=True)
