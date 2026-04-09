@@ -19,6 +19,7 @@ def create_tables():
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     error = None
+    success = None
     conn = sqlite3.connect('accounts.db')
     c = conn.cursor()
 
@@ -31,11 +32,12 @@ def register():
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
             conn.commit()
             conn.close()
+            success = "Registration successful! Please log in."
             return redirect(url_for('auth.login'))
         except sqlite3.IntegrityError:
             error = "Email already registered"
     conn.close()
-    return render_template('register.html', error=error)
+    return render_template('register.html', error=error, success=success)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
