@@ -52,3 +52,38 @@ def test_password_hashing():
     assert check_password_hash(password_hash, password)  # Should return True for correct password
     assert not check_password_hash(password_hash, "wrongpassword")  # Should return False for incorrect password
 
+def test_login_page(client):
+    """Test that the login page loads correctly."""
+    response = client.get('/login')
+    assert response.status_code == 200  # Check if the login page loads successfully
+    assert b"Login" in response.data  # Check if the login form is present in the response
+
+def test_register_page(client):
+    """Test that the registration page loads correctly."""
+    response = client.get('/register')
+    assert response.status_code == 200  # Check if the registration page loads successfully
+    assert b"Register" in response.data  # Check if the registration form is present in the response
+
+def test_login(client):
+    """Test the user login process."""
+    # First, register a user to test login
+    client.post('/register', data={
+        'email': 'test@example.com',
+        'password': 'testpassword'
+    })
+    response = client.post('/login', data={
+        'email': 'test@example.com',
+        'password': 'testpassword'
+    })
+    assert response.status_code == 302  # Expect a redirect after successful login
+    assert response.location == '/'  # Check if redirected to home page
+
+def test_login_invalid_credentials(client):
+    """Test login with invalid credentials."""
+    response = client.post('/login', data={
+        'email': 'test@example.com',
+        'password': 'wrongpassword'
+    })
+    assert response.status_code == 200  # Should return the login page with an error
+    assert b"Invalid email or password" in response.data  # Check for error message in response
+
