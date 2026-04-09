@@ -10,6 +10,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
+app.secret_key = 'super-secret-key-12345'  
 app.register_blueprint(auth_bp)
 
 def init_db():
@@ -29,7 +30,7 @@ def init_db():
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('login.html')
 
 @app.route("/items", methods=["GET", "POST"])
 def items():

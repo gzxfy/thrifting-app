@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, flash, render_template, request, redirect, url_for
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 auth_bp = Blueprint('auth', __name__)
@@ -32,7 +32,7 @@ def register():
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
             conn.commit()
             conn.close()
-            success = "Registration successful! Please log in."
+            flash("Registration successful! Please log in.")
             return redirect(url_for('auth.login'))
         except sqlite3.IntegrityError:
             error = "Email already registered"
@@ -41,7 +41,27 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    error = None
+    success = None
+    conn = sqlite3.connect('accounts.db')
+    c = conn.cursor()
+
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        try:
+            c.execute("SELECT password_hash FROM accounts WHERE email = ?", (email,))
+            result = c.fetchone()
+            if result and check_password_hash(result[0], password):
+                flash("Login successful!")
+                return redirect(url_for('home'))
+            else:
+                error = "Invalid email or password"
+        except sqlite3.Error as e:
+            error = f"Database error: {e}"
+    conn.close()
+    return render_template('login.html', error=error, success=success)
 
 if __name__ == '__main__':
     create_tables()
