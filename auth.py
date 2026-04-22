@@ -70,15 +70,6 @@ def logout():
     flash("You have been logged out.")
     return redirect(url_for('home'))
 
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'email' not in session:
-            flash("Please log in to access this page.")
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 if __name__ == '__main__':
     create_tables()
