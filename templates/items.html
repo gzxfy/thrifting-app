@@ -1,86 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Items</title>
+{% extends "base.html" %}
 
-    <!-- Disable your CSS for now -->
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-
-<body class="bg-light">
-
-<div class="container mt-5">
-
-    <h1 class="mb-4 text-center">Sales</h1>
-
-    <div class="card p-4 mb-4">
-        <h2 class="mb-3">Add Item</h2>
-
-        <form action="/items" method="POST" enctype="multipart/form-data">
-
-            <div class="mb-3">
-                <label class="form-label">Item Name</label>
-                <input class="form-control" type="text" name="title" placeholder="e.g., Vintage Lamp" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Description</label>
-                <textarea class="form-control" name="description" placeholder="e.g., small grey Nike t-shirt" required></textarea>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Image URL</label>
-                <input class="form-control" type="url" name="image_url" placeholder="e.g., https://example.com/image.jpg">
-                <input class="form-control" type="file" name="image_file" accept="image/*">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Price</label>
-                <input class="form-control" type="number" name="price" step="0.01" placeholder="$0.00" required>
-            </div>
-
-            <button class="btn btn-primary">Add Item</button>
-        </form>
-    </div>
-
-    <h2 class="mb-3">Item List</h2>
-
-    {% if items %}
-        <div class="row">
-        {% for item in items %}
-            <div class="col-md-6 mb-3">
-                <div class="card p-3">
-
-                    <h5>{{ item[1] }}</h5>
-                    <p class="text-muted">{{ item[2] }}</p>
-                    <p><strong>${{ item[4] }}</strong></p>
-                    {% if item[3] %}
-                        <img src="{{ item[3] }}" alt="{{ item[1] }}" class="img-fluid mb-2">
-                    {% endif %}
-
-                    <form method="POST" action="/delete/{{ item[0] }}" onsubmit="return confirm('Are you sure you want to delete this item?');">
-                        <button class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-
-                    <form method="GET" action="/edit/{{ item[0] }}" class="mt-2">
-                        <button class="btn btn-secondary btn-sm">Edit</button>
-                    </form>
-
-                </div>
-            </div>
-        {% endfor %}
+{% block content %}
+<h1>Sales</h1>
+<div class="form-card">
+    <h2>Add Item</h2>
+    <form action="/items" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>Item Name</label>
+            <input type="text" name="title" placeholder="e.g., Vintage Lamp" required>
         </div>
-    {% else %}
-        <p>No items found. Add some!</p>
-    {% endif %}
 
-    <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" placeholder="e.g., small grey Nike t-shirt" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Picture of the item</label>
+            <input type="file" name="image_file" accept="image/*">
+        </div>
 
+        <div class="form-group">
+            <label>Price</label>
+            <input type="number" name="price" step="0.01" placeholder="$0.00" required>
+        </div>
+        
+        <button type="sumbit" class="btn btn-primary">Add item</button>
+    </form>
 </div>
 
-</body>
-</html>
+<h2>Sales in the area</h2>
+{% if items %}
+    <div class="items-grid">
+        {% for item in items %}
+            <div class="item-card">
+                <h5> {{ item[1] }}</h5>
+                <p class="description"> {{ item[2] }}</p>
+                <p class="price">${{ item[4] }}</p>
+                {% if item[3] %}
+                    <img src="{{ item[3] }}" alt="{{ item[1] }}" class="item-image">
+                {% endif %}
+            </div>
+
+            <div class="button-group">
+                <form method="POST" action="/delete/{{ item[0] }}" onsubmit="return confirm('Are you sure you want to delete this item?');" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+
+                <form method="GET" action="/edit/{{ item[0] }}" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary">Edit</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+{% else %} 
+    <p>No Items found. Add some!</p>
+{% endif %}
+
+<a href="/" class="btn btn-secondary">Back to Home</a>
+{% endblock %}

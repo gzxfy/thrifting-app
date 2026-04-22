@@ -30,7 +30,7 @@ def init_db():
 
 @app.route('/')
 def home():
-    return render_template('login.html')
+    return render_template('home.html')
 
 @app.route("/items", methods=["GET", "POST"])
 def items():

@@ -1,44 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit {{ item[1] }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container mt-5">
-    <h1 class="mb-4 text-center">Edit Item</h1>
+{% extends "base.html" %}
 
-    <div class="card p-4 mb-4">
+{% block content %}
+    <h1>Edit Item</h1>
+    <div class="form-card">
         <form action="/edit/{{ item[0] }}" method="POST" enctype="multipart/form-data">
-
-            <div class="mb-3">
-                <label class="form-label">Item Name</label>
-                <input class="form-control" type="text" name="title" value="{{ item[1] }}" required>
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" name="title" value="{{ item[1] }}" required>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Description</label>
-                <textarea class="form-control" name="description" required>{{ item[2] }}</textarea>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" required>{{ item[2] }}</textarea>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Image URL</label>
-                <input class="form-control" type="url" name="image_url" value="{{ item[3] }}">
-                <input class="form-control" type="file" name="image_file" accept="image/*">
+            <div class="form-group">
+                <label>Image URL</label>
+                <input type="url" name="image_url" value="{{ item[3] }}">
+                <input type="file" name="image_file" accept="image/*">
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Price</label>
-                <input class="form-control" type="number" name="price" step="0.01" value="{{ item[4] }}" placeholder="$0.00" required>
+            <div class="form-group">
+                <label>Price</label>
+                <input type="number" name="price" step="0.01" value="{{ item[4] }}" placeholder="$0.00" required>
             </div>
 
-            <button class="btn btn-primary">Update Item</button>
+            <button type="submit" class="btn btn-primary">Update Item</button>
         </form>
     </div>
 
     <a href="/items" class="btn btn-secondary">Back to Items</a>
-</div>
-</body>
-</html>
+{% endblock %}

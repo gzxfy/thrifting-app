@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Welcome to the Thrifting App!</h1>
+    <p class="lead">Discover amazing thrift items and share your finds with the community.</p>
+    {% if session.get('email') %}
+        <p class="lead">Welcome, <strong>{{ session['email'] }}</strong>.</p>
+    {% else %}
+        <p class="lead"><a href="/login">Login</a> or <a href="/register">Register</a> to start sharing your thrift finds!</p>
+    {% endif %}
+
+    <a href="/items" class="btn btn-primary">Browse Items</a>
+{% endblock %}

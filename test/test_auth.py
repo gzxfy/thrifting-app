@@ -1,3 +1,4 @@
+from flask import session
 import pytest
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -87,3 +88,24 @@ def test_login_invalid_credentials(client):
     assert response.status_code == 200  # Should return the login page with an error
     assert b"Invalid email or password" in response.data  # Check for error message in response
 
+
+def test_logout(client):
+    """Test the user logout process."""
+    # First, register and log in a user to test logout
+    client.post('/register', data={
+        'email': 'test@example.com',
+        'password': 'testpassword'
+    })
+    response = client.post('/login', data={
+        'email': 'test@example.com',
+        'password': 'testpassword'
+    })
+    assert response.status_code == 302  # Expect a redirect after successful login
+    # Now test logout
+    response = client.get('/logout')
+    assert response.status_code == 302  # Expect a redirect after logout
+    assert response.location == '/'  # Check if redirected to home page after logout
+    
+    with client:
+        response = client.get('/')
+        assert 'email' not in session  # Check for logout message in response

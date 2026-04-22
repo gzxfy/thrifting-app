@@ -1,7 +1,10 @@
-from flask import Blueprint, flash, render_template, request, redirect, url_for
+from flask import Blueprint, app, flash, render_template, request, redirect, session, url_for
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 auth_bp = Blueprint('auth', __name__)
+
+
+#IMPLEMENT A NAV BAR WITH LOGIN AND REGISTER LINKS IN THE BASE TEMPLATE, THEN EXTEND IT IN ALL OTHER TEMPLATES TO PROVIDE EASY NAVIGATION FOR USERS.
 
 def create_tables():
     conn = sqlite3.connect('accounts.db')
@@ -26,7 +29,6 @@ def register():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-        
         try:
             password_hash = generate_password_hash(password)
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
@@ -45,15 +47,14 @@ def login():
     success = None
     conn = sqlite3.connect('accounts.db')
     c = conn.cursor()
-
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-
         try:
             c.execute("SELECT password_hash FROM accounts WHERE email = ?", (email,))
             result = c.fetchone()
             if result and check_password_hash(result[0], password):
+                session['email'] = email  # Store email in session for later use   
                 flash("Login successful!")
                 return redirect(url_for('home'))
             else:
@@ -62,6 +63,13 @@ def login():
             error = f"Database error: {e}"
     conn.close()
     return render_template('login.html', error=error, success=success)
+
+@auth_bp.route('/logout')
+def logout():
+    session.pop('email', None)  # Remove email from session
+    flash("You have been logged out.")
+    return redirect(url_for('home'))
+
 
 if __name__ == '__main__':
     create_tables()

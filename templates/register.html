@@ -1,49 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-{% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Registeration</h1>
+    {% if error %}
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
     {% endif %}
-{% endwith %}
-
-{% if error %}
-    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="text-align: center;">
-        {{ error }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-{% endif %}
-<div class="container mt-5">
-    <h1 class="mb-4 text-center">Registration</h1>
-
-    <div class="card p-4 mb-4">
+    
+<div class="container">
+    <div class="form-card">
         <form action="/register" method="POST">
-
-            <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input class="form-control" type="email" name="email" required>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input class="form-control" type="password" name="password" required>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
             </div>
 
-            <button class="btn btn-primary">Register</button>
-            <button class="btn btn-secondary" onclick="window.location.href='/login'; return false;">Already have an account?</button>
+            <button type="submit" class="btn btn-primary">Register</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/login'; return false;">Already have an account?</button>
         </form>
     </div>
 </div>
-</body>
-</html>
+{% endblock %}
