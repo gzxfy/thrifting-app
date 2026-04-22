@@ -13,7 +13,6 @@ This project is built to strengthen my skills in backend development, databases,
 - Upload images for items
 - Each user can manage their own listings
 - Persistent data storage using a database
-- Responsive UI using Bootstrap
 
 ---
 
