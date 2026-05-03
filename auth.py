@@ -1,10 +1,8 @@
 from flask import Blueprint, app, flash, render_template, request, redirect, session, url_for
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 auth_bp = Blueprint('auth', __name__)
-
-
-#IMPLEMENT A NAV BAR WITH LOGIN AND REGISTER LINKS IN THE BASE TEMPLATE, THEN EXTEND IT IN ALL OTHER TEMPLATES TO PROVIDE EASY NAVIGATION FOR USERS.
 
 def create_tables():
     conn = sqlite3.connect('accounts.db')
@@ -34,10 +32,12 @@ def register():
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
             conn.commit()
             conn.close()
-            flash("Registration successful! Please log in.")
+            flash("Registration successful! Please log in.", "success")
             return redirect(url_for('auth.login'))
         except sqlite3.IntegrityError:
-            error = "Email already registered"
+            flash("Email already registered. Please use a different email or log in.", "danger")
+        except sqlite3.Error as e:
+            flash(f"Database error: {e}", "danger")
     conn.close()
     return render_template('register.html', error=error, success=success)
 
@@ -55,19 +55,31 @@ def login():
             result = c.fetchone()
             if result and check_password_hash(result[0], password):
                 session['email'] = email  # Store email in session for later use   
-                flash("Login successful!")
+                flash("Login successful!", "success")
                 return redirect(url_for('home'))
             else:
-                error = "Invalid email or password"
+               flash("Invalid email or password", "danger")
         except sqlite3.Error as e:
-            error = f"Database error: {e}"
+            flash(f"Database error: {e}", "danger")
     conn.close()
     return render_template('login.html', error=error, success=success)
 
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'email' not in session:
+            flash('Please Log in or Make an Account', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @auth_bp.route('/logout')
+@login_required
 def logout():
     session.pop('email', None)  # Remove email from session
-    flash("You have been logged out.")
+    flash("You have been logged out.", "danger")
     return redirect(url_for('home'))
 
 

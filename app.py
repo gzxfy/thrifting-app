@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, flash, render_template, request, redirect, session, url_for
 import sqlite3
 from werkzeug.utils import secure_filename
 import os
-from auth import auth_bp, create_tables
+from auth import auth_bp, create_tables, login_required
 
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -22,7 +22,8 @@ def init_db():
             title TEXT NOT NULL,
             description TEXT NOT NULL,
             url TEXT,
-            price REAL NOT NULL
+            price REAL NOT NULL,
+            email TEXT NOT NULL
         )
     ''')
     conn.commit()
@@ -33,6 +34,7 @@ def home():
     return render_template('home.html')
 
 @app.route("/items", methods=["GET", "POST"])
+@login_required
 def items():
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
@@ -42,6 +44,7 @@ def items():
         description = request.form.get('description')
         price = request.form.get('price')
         url = request.form.get('image_url')
+        email = session.get('email')  # Get the logged-in user's email from the session
 
         if 'image_file' in request.files:
             file = request.files['image_file']
@@ -49,7 +52,7 @@ def items():
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 url = f'/static/uploads/{filename}'
-        c.execute("INSERT INTO items (title, description, url, price) VALUES (?, ?, ?, ?)", (title, description, url, price))
+        c.execute("INSERT INTO items (title, description, url, price, email) VALUES (?, ?, ?, ?, ?)", (title, description, url, price, email))
         conn.commit()
 
     c.execute("SELECT * FROM items")
@@ -59,7 +62,12 @@ def items():
 
 
 @app.route("/delete/<int:item_id>", methods=["POST"])
+@login_required
 def delete_item(item_id):
+    if 'email' != session.get('email'):
+        flash("You are not authorized to delete this item.", "danger")
+        return redirect(url_for('items'))
+    
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
     c.execute("DELETE FROM items WHERE id = ?", (item_id,))
@@ -68,6 +76,7 @@ def delete_item(item_id):
     return redirect(url_for('items'))
 
 @app.route("/edit/<int:item_id>", methods=["GET", "POST"])
+@login_required
 def edit_item(item_id):
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
