@@ -172,6 +172,7 @@ p.price {
     margin-bottom: 20px;
     border-radius: 5px;
     border-left: 4px solid;
+    text-align: center;
 }
 
 .alert-success {
