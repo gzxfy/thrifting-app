@@ -1,7 +1,8 @@
-from flask import Blueprint, app, flash, render_template, request, redirect, session, url_for
+from flask import Blueprint, flash, render_template, request, redirect, session, url_for
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+
 auth_bp = Blueprint('auth', __name__)
 
 def create_tables():
@@ -38,6 +39,8 @@ def register():
             flash("Email already registered. Please use a different email or log in.", "danger")
         except sqlite3.Error as e:
             flash(f"Database error: {e}", "danger")
+        finally:
+            conn.close()
     conn.close()
     return render_template('register.html', error=error, success=success)
 
@@ -69,7 +72,6 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'email' not in session:
-            flash('Please Log in or Make an Account', 'danger')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -79,7 +81,7 @@ def login_required(f):
 @login_required
 def logout():
     session.pop('email', None)  # Remove email from session
-    flash("You have been logged out.", "danger")
+    flash("You have been logged out.", "info")
     return redirect(url_for('home'))
 
 

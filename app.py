@@ -34,7 +34,6 @@ def home():
     return render_template('home.html')
 
 @app.route("/items", methods=["GET", "POST"])
-@login_required
 def items():
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
@@ -45,7 +44,13 @@ def items():
         price = request.form.get('price')
         url = request.form.get('image_url')
         email = session.get('email')  # Get the logged-in user's email from the session
-
+        if not email:
+            flash("You must be logged in to create an item.", "danger")
+            return redirect(url_for('auth.login'))
+        if not title or not description or not price:
+            flash("Title, description, and price are required.", "danger")
+            return redirect(url_for('items'))
+        
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
@@ -64,12 +69,16 @@ def items():
 @app.route("/delete/<int:item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    if 'email' != session.get('email'):
-        flash("You are not authorized to delete this item.", "danger")
-        return redirect(url_for('items'))
-    
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
+    
+    c.execute("SELECT email FROM items WHERE id = ?", (item_id,))
+    item = c.fetchone()
+    if not item or item[0] != session.get('email'):
+        flash("You are not authorized to delete this item.", "danger")
+        conn.close()
+        return redirect(url_for('items'))
+
     c.execute("DELETE FROM items WHERE id = ?", (item_id,))
     conn.commit()
     conn.close()
@@ -80,6 +89,13 @@ def delete_item(item_id):
 def edit_item(item_id):
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
+
+    c.execute("SELECT email FROM items WHERE id = ?", (item_id,))
+    item = c.fetchone()
+    if not item or item[0] != session.get('email'):
+        flash("You are not authorized to edit this item.", "danger")
+        conn.close()
+        return redirect(url_for('items'))
 
     if request.method == "POST":
         title = request.form.get('title')
