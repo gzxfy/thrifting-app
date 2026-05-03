@@ -41,7 +41,6 @@ def register():
             flash(f"Database error: {e}", "danger")
         finally:
             conn.close()
-    conn.close()
     return render_template('register.html', error=error, success=success)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
