@@ -13,6 +13,14 @@ app = Flask(__name__)
 app.secret_key = 'super-secret-key-12345'  
 app.register_blueprint(auth_bp)
 
+# Set security headers to prevent caching, made with the help of ChatGPT
+@app.after_request
+def set_response_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 def init_db():
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
@@ -49,6 +57,7 @@ def items():
             return redirect(url_for('auth.login'))
         if not title or not description or not price:
             flash("Title, description, and price are required.", "danger")
+            conn.close()
             return redirect(url_for('items'))
         
         if 'image_file' in request.files:
@@ -57,8 +66,11 @@ def items():
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 url = f'/static/uploads/{filename}'
+
         c.execute("INSERT INTO items (title, description, url, price, email) VALUES (?, ?, ?, ?, ?)", (title, description, url, price, email))
         conn.commit()
+        conn.close()
+        return redirect(url_for('items'))
 
     c.execute("SELECT * FROM items")
     items_data = c.fetchall()
