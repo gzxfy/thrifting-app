@@ -71,6 +71,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'email' not in session:
+            flash("You must be logged in.", "danger")
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -80,7 +81,7 @@ def login_required(f):
 @login_required
 def logout():
     session.pop('email', None)  # Remove email from session
-    flash("You have been logged out.", "info")
+    flash("You have been logged out.", "success")
     return redirect(url_for('home'))
 
 

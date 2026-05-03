@@ -13,6 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'super-secret-key-12345'  
 app.register_blueprint(auth_bp)
 
+# Set security headers to prevent caching, made with the help of ChatGPT
 @app.after_request
 def set_response_headers(response):
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
