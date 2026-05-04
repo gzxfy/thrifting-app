@@ -187,6 +187,14 @@ p.price {
     color: #721c24;
 }
 
+.alert .close-btn {
+    margin-left: 15px;
+    font-size: larger;
+    font-weight: bold;
+    cursor: pointer;
+    color: inherit;
+}
+
 /* Items Grid */
 .items-grid {
     display: grid;

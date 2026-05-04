@@ -2,6 +2,7 @@ from flask import Blueprint, flash, render_template, request, redirect, session,
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import validation_helpers 
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -28,13 +29,20 @@ def register():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
         try:
+            if password != confirm_password:
+                raise ValueError("Passwords do not match.")
+            validation_helpers.validate_email(email)
+            validation_helpers.validate_password(password)
             password_hash = generate_password_hash(password)
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
             conn.commit()
             conn.close()
             flash("Registration successful! Please log in.", "success")
             return redirect(url_for('auth.login'))
+        except ValueError as ve:
+            flash(str(ve), "danger")
         except sqlite3.IntegrityError:
             flash("Email already registered. Please use a different email or log in.", "danger")
         except sqlite3.Error as e:
@@ -49,6 +57,7 @@ def login():
     success = None
     conn = sqlite3.connect('accounts.db')
     c = conn.cursor()
+
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
