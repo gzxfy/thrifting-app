@@ -3,6 +3,7 @@ import sqlite3
 from werkzeug.utils import secure_filename
 import os
 from auth import auth_bp, create_tables, login_required
+import validation_helpers
 
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -37,10 +38,12 @@ def init_db():
     conn.commit()
     conn.close()
 
+#Home route, will most likely be changed to a landing page in the future, but for now it just redirects to the items page.
 @app.route('/')
 def home():
     return render_template('home.html')
 
+# Items route
 @app.route("/items", methods=["GET", "POST"])
 def items():
     conn = sqlite3.connect('thrifting.db')
@@ -50,22 +53,25 @@ def items():
         title = request.form.get('title')
         description = request.form.get('description')
         price = request.form.get('price')
-        url = request.form.get('image_url')
         email = session.get('email')  # Get the logged-in user's email from the session
         if not email:
             flash("You must be logged in to create an item.", "danger")
             return redirect(url_for('auth.login'))
-        if not title or not description or not price:
-            flash("Title, description, and price are required.", "danger")
-            conn.close()
-            return redirect(url_for('items'))
         
+        url = None  # Initialize url variable
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 url = f'/static/uploads/{filename}'
+
+        try:
+            validation_helpers.validate_item_data(title, description, price, url)
+        except ValueError as ve:
+            flash(str(ve), "danger")
+            conn.close()
+            return redirect(url_for('items'))
 
         c.execute("INSERT INTO items (title, description, url, price, email) VALUES (?, ?, ?, ?, ?)", (title, description, url, price, email))
         conn.commit()
@@ -78,6 +84,7 @@ def items():
     return render_template('items.html', items=items_data)
 
 
+# Delete and Edit routes, with authorization checks to ensure only the user who created the item can edit or delete it.
 @app.route("/delete/<int:item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
@@ -102,9 +109,10 @@ def edit_item(item_id):
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
 
-    c.execute("SELECT email FROM items WHERE id = ?", (item_id,))
+    c.execute("SELECT * FROM items WHERE id = ?", (item_id,))
     item = c.fetchone()
-    if not item or item[0] != session.get('email'):
+
+    if not item or item[5] != session.get('email'):
         flash("You are not authorized to edit this item.", "danger")
         conn.close()
         return redirect(url_for('items'))
@@ -113,14 +121,22 @@ def edit_item(item_id):
         title = request.form.get('title')
         description = request.form.get('description')
         price = request.form.get('price')
-        url = request.form.get('image_url')
-
+        url = item[3]
+        try:
+            validation_helpers.validate_item_data(title, description, price, url)
+        except ValueError as ve:
+            flash(str(ve), "danger")
+            conn.close()
+            return redirect(url_for('edit_item', item_id=item_id))
+        
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 url = f'/static/uploads/{filename}'
+            else:
+                url = item[3]  # Keep the existing image URL if no new file is uploaded
 
         c.execute("UPDATE items SET title = ?, description = ?, url = ?, price = ? WHERE id = ?", (title, description, url, price, item_id))
         conn.commit()

@@ -23,6 +23,8 @@ def create_tables():
 def register():
     error = None
     success = None
+    email = ''
+    password = ''
     conn = sqlite3.connect('accounts.db')
     c = conn.cursor()
 
@@ -31,10 +33,9 @@ def register():
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
         try:
+            validation_helpers.validate_email_and_password(email, password)
             if password != confirm_password:
                 raise ValueError("Passwords do not match.")
-            validation_helpers.validate_email(email)
-            validation_helpers.validate_password(password)
             password_hash = generate_password_hash(password)
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
             conn.commit()
@@ -49,12 +50,14 @@ def register():
             flash(f"Database error: {e}", "danger")
         finally:
             conn.close()
-    return render_template('register.html', error=error, success=success)
+    return render_template('register.html', email=email, password=password, error=error, success=success)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     success = None
+    email = ''
+    password = ''
     conn = sqlite3.connect('accounts.db')
     c = conn.cursor()
 
@@ -62,6 +65,7 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
         try:
+            # Create a validation for login credentials.
             c.execute("SELECT password_hash FROM accounts WHERE email = ?", (email,))
             result = c.fetchone()
             if result and check_password_hash(result[0], password):
@@ -73,7 +77,7 @@ def login():
         except sqlite3.Error as e:
             flash(f"Database error: {e}", "danger")
     conn.close()
-    return render_template('login.html', error=error, success=success)
+    return render_template('login.html', email=email, password=password, error=error, success=success)
 
 
 def login_required(f):

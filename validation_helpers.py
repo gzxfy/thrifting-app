@@ -19,4 +19,20 @@ def validate_password(password):
     if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
         raise ValueError("Password must contain at least one special character.")
     return True
-    
+
+def validate_email_and_password(email, password):
+    validate_email(email)
+    validate_password(password)
+    return True
+
+# Will most likely be changed to use a more robust validation library in the future, and for better error handling and user feedback, but this is a simple validation function for now.
+def validate_item_data(title, description, price, url):
+    if not title or not description or not price or not url:
+        raise ValueError("Title, description, price, and a picture are required.")
+    try:
+        price = float(price)
+        if price < 0:
+            raise ValueError("Price must be a positive number.")
+    except ValueError:
+        raise ValueError("Price must be a valid number.")
+    return True
