@@ -3,11 +3,16 @@ import re
 
 # Validation helper functions for email and password, will be changed to use email_validator library for better validation in the future
 def validate_email(email):
+    if email is None or email.strip() == "":
+        raise ValueError("Email is required.")
+    
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(pattern, email):
         raise ValueError("Invalid email format.")
     
 def validate_password(password):
+    if password is None or password.strip() == "":
+        raise ValueError("Password is required.")
     if len(password) < 8:
         raise ValueError("Password must be at least 8 characters long.")
     if not re.search(r'[A-Z]', password):

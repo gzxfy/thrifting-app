@@ -58,7 +58,7 @@ def items():
             flash("You must be logged in to create an item.", "danger")
             return redirect(url_for('auth.login'))
         
-        url = None  # Initialize url variable
+        url = request.form.get('image_url')  # Get the image URL from the form, if provided
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
