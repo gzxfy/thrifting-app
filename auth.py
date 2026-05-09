@@ -44,13 +44,19 @@ def register():
             return redirect(url_for('auth.login'))
         except ValueError as ve:
             flash(str(ve), "danger")
+            password = ''  # Clear password field on error
+            confirm_password = ''  # Clear confirm password field on error
         except sqlite3.IntegrityError:
             flash("Email already registered. Please use a different email or log in.", "danger")
+            password = ''  # Clear password field on error
+            confirm_password = ''  # Clear confirm password field on error
         except sqlite3.Error as e:
             flash(f"Database error: {e}", "danger")
+            password = ''  # Clear password field on error
+            confirm_password = ''  # Clear confirm password field on error
         finally:
             conn.close()
-    return render_template('register.html', email=email, password=password, error=error, success=success)
+    return render_template('register.html', email=email, password='', confirm_password='', error=error, success=success)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
