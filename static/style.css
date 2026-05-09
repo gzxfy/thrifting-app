@@ -257,3 +257,24 @@ p.price {
         flex-direction: column;
     }
 }
+
+/* Validation Sidebar */
+.validation-sidebar {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+.validation-sidebar label {
+    display: block;
+    margin-bottom: 10px;
+    color: #333;
+}
+.validation-sidebar label.valid {
+    color: #28a745;
+}
+.validation-sidebar label.invalid {
+    color: #dc3545;
+}
+
