@@ -36,8 +36,8 @@ def validate_item_data(title, description, price, url):
         raise ValueError("Title, description, price, and a picture are required.")
     try:
         price = float(price)
-        if price < 0:
-            raise ValueError("Price must be a positive number.")
     except ValueError:
         raise ValueError("Price must be a valid number.")
+    if price < 0:
+        raise ValueError("Price must be a positive number.")
     return True
