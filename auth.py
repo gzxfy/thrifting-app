@@ -83,7 +83,7 @@ def login():
         except sqlite3.Error as e:
             flash(f"Database error: {e}", "danger")
     conn.close()
-    return render_template('login.html', email=email, password=password, error=error, success=success)
+    return render_template('login.html', email=email, password='', error=error, success=success)
 
 
 def login_required(f):
