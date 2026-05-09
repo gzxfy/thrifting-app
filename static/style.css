@@ -258,23 +258,132 @@ p.price {
     }
 }
 
-/* Validation Sidebar */
+/* ==================== REGISTRATION WRAPPER & LAYOUT ==================== */
+/* Made with the respect to ChatGPT's suggestions for a clean and modern design, with a focus on user experience and responsiveness. */
+/* Main wrapper: positions form and sidebar using flexbox */
+.registration-wrapper {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+/* Form card takes up 60% on desktop */
+.registration-wrapper .form-card {
+    flex: 1.5;
+    min-width: 0; /* Prevents flex children from overflowing */
+}
+
+/* Validation sidebar takes up 40% on desktop */
 .validation-sidebar {
+    flex: 1;
     background-color: #fff;
     border-radius: 8px;
-    padding: 20px;
+    padding: 25px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
 }
-.validation-sidebar label {
-    display: block;
-    margin-bottom: 10px;
+
+/* ==================== VALIDATION SIDEBAR STYLING ==================== */
+
+/* Sidebar heading */
+.validation-sidebar h3 {
+    margin: 0 0 20px 0;
     color: #333;
+    font-size: 1.1em;
+    border-bottom: 2px solid #007BFF;
+    padding-bottom: 10px;
 }
-.validation-sidebar label.valid {
-    color: #28a745;
+
+/* Individual requirement item */
+.requirement-item {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    color: #dc3545;
+    font-weight: 400;
+    transition: color 0.3s ease;
 }
-.validation-sidebar label.invalid {
+
+/* Requirement icon styling */
+.requirement-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1em;
+    transition: color 0.3s ease;
     color: #dc3545;
 }
 
+/* Invalid state: red X */
+.requirement-icon.invalid {
+    color: #dc3545;
+}
+
+/* Valid state: green checkmark - swap the icon content */
+.requirement-icon.valid {
+    color: #28a745;
+}
+
+/* Requirement text */
+.requirement-text {
+    font-size: 0.95em;
+    line-height: 1.4;
+    min-width: 0;
+    word-wrap: break-word;
+}
+
+/* Color change for entire requirement when valid */
+.requirement-item.valid {
+    color: #28a745;
+}
+
+.requirement-item.invalid {
+    color: #dc3545;
+}
+
+/* ==================== RESPONSIVE: TABLET & MOBILE ==================== */
+
+@media (max-width: 1024px) {
+    /* On tablets, reduce gap and padding */
+    .registration-wrapper {
+        gap: 20px;
+    }
+
+    .validation-sidebar {
+        position: static; /* Remove sticky positioning on smaller screens */
+    }
+}
+
+/* Stack vertically on mobile devices */
+@media (max-width: 768px) {
+    .registration-wrapper {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Both form and sidebar now take full width */
+    .registration-wrapper .form-card {
+        flex: 1;
+    }
+
+    .validation-sidebar {
+        flex: 1;
+        width: 100%;
+    }
+
+    .validation-sidebar h3 {
+        font-size: 1em;
+    }
+
+    .requirement-text {
+        font-size: 0.9em;
+    }
+}

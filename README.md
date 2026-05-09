@@ -53,4 +53,6 @@ pip install flask
 4. Run the app:
 python app.py
 
-## Screenshots📷
+## Attribution
+This project includes code inspired by:
+- [registration_api_client](https://github.com/T4jgat/registration_api_client) by T4jgat

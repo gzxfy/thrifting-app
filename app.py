@@ -148,9 +148,6 @@ def edit_item(item_id):
     conn.close()
     return render_template('edit_item.html', item=item_data)
 
-
-
-
 if __name__ == '__main__':
     create_tables()
     init_db()
