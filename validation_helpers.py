@@ -1,7 +1,6 @@
-from email_validator import validate_email, EmailNotValidError
 import re
 
-# Validation helper functions for email and password, will be changed to use email_validator library for better validation in the future
+# Validation helper functions for email and password
 def validate_email(email):
     if email is None or email.strip() == "":
         raise ValueError("Email is required.")
@@ -35,9 +34,9 @@ def validate_item_data(title, description, price, url):
     if not title or not description or not price or not url:
         raise ValueError("Title, description, price, and a picture are required.")
     try:
-        price = float(price)
-    except ValueError:
+        price_float = float(price)
+    except (ValueError, TypeError):
         raise ValueError("Price must be a valid number.")
-    if price < 0:
+    if price_float < 0:
         raise ValueError("Price must be a positive number.")
     return True

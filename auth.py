@@ -39,7 +39,6 @@ def register():
             password_hash = generate_password_hash(password)
             c.execute("INSERT INTO accounts (email, password_hash) VALUES (?, ?)", (email, password_hash))
             conn.commit()
-            conn.close()
             flash("Registration successful! Please log in.", "success")
             return redirect(url_for('auth.login'))
         except ValueError as ve:

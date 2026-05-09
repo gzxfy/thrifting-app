@@ -65,11 +65,11 @@ function updateValidationUI() {
 passwordInput.addEventListener('input', updateValidationUI);
 confirmPasswordInput.addEventListener('input', updateValidationUI);
 
-updateValidationUI(); // Initial call to set the correct state on page load\
+updateValidationUI(); // Initial call to set the correct state on page load
 
 /**
  * Password Validation Script
  * Inspired by: https://github.com/T4jgat/registration_api_client
  * Original author: T4jgat
- * License: [CHECK THEIR LICENSE]
+ * Note: This implementation is independently written and inspired by the above project's concept.
  */

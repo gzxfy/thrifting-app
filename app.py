@@ -46,18 +46,16 @@ def home():
 # Items route
 @app.route("/items", methods=["GET", "POST"])
 def items():
-    conn = sqlite3.connect('thrifting.db')
-    c = conn.cursor()
-
     if request.method == "POST":
-        title = request.form.get('title')
-        description = request.form.get('description')
-        price = request.form.get('price')
         email = session.get('email')  # Get the logged-in user's email from the session
         if not email:
             flash("You must be logged in to create an item.", "danger")
             return redirect(url_for('auth.login'))
-        
+
+        title = request.form.get('title')
+        description = request.form.get('description')
+        price = request.form.get('price')
+
         url = request.form.get('image_url')  # Get the image URL from the form, if provided
         if 'image_file' in request.files:
             file = request.files['image_file']
@@ -70,14 +68,17 @@ def items():
             validation_helpers.validate_item_data(title, description, price, url)
         except ValueError as ve:
             flash(str(ve), "danger")
-            conn.close()
             return redirect(url_for('items'))
 
+        conn = sqlite3.connect('thrifting.db')
+        c = conn.cursor()
         c.execute("INSERT INTO items (title, description, url, price, email) VALUES (?, ?, ?, ?, ?)", (title, description, url, price, email))
         conn.commit()
         conn.close()
         return redirect(url_for('items'))
 
+    conn = sqlite3.connect('thrifting.db')
+    c = conn.cursor()
     c.execute("SELECT * FROM items")
     items_data = c.fetchall()
     conn.close()
@@ -122,21 +123,20 @@ def edit_item(item_id):
         description = request.form.get('description')
         price = request.form.get('price')
         url = item[3]
-        try:
-            validation_helpers.validate_item_data(title, description, price, url)
-        except ValueError as ve:
-            flash(str(ve), "danger")
-            conn.close()
-            return redirect(url_for('edit_item', item_id=item_id))
-        
+
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 url = f'/static/uploads/{filename}'
-            else:
-                url = item[3]  # Keep the existing image URL if no new file is uploaded
+
+        try:
+            validation_helpers.validate_item_data(title, description, price, url)
+        except ValueError as ve:
+            flash(str(ve), "danger")
+            conn.close()
+            return redirect(url_for('edit_item', item_id=item_id))
 
         c.execute("UPDATE items SET title = ?, description = ?, url = ?, price = ? WHERE id = ?", (title, description, url, price, item_id))
         conn.commit()

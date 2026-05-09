@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Edit Item</h1>
 <div class="form-card">
-    <form action="/edit/{{ item[0] }}" method="POST" enctype="multipart/form-data" novalidate>
+    <form action="/edit/{{ item[0] }}" method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label>Item Name</label>
             <input type="text" name="title" value="{{ item[1] }}" required>
