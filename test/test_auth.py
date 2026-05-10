@@ -2,13 +2,15 @@ from flask import session
 import pytest
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from validation_helpers import validate_email_and_password
 from app import app, init_db, create_tables
 
 def register_and_login(client, email, password):
     """Helper function to register and log in a user."""
     client.post('/register', data={
         'email': email,
-        'password': password
+        'password': password,
+        'confirm_password': password
     })
     return client.post('/login', data={
         'email': email,
@@ -21,7 +23,7 @@ def create_test_item(client, title, description, price):
         'title': title,
         'description': description,
         'price': price,
-        'image_url': ''
+        'image_url': 'http://example.com/image.jpg'
     })
 
 @pytest.fixture
@@ -49,24 +51,27 @@ def test_register(client):
     """Test the user registration process."""
     response = client.post('/register', data={
         'email': 'test@example.com',
-        'password': 'testpassword'
-
+        'password': 'Test@1234',
+        'confirm_password': 'Test@1234'
     })
 
     assert response.status_code == 302  # Expect a redirect after successful registration
-    assert 'login' in response.location  # Check if redirected to login page
+    assert response.location == '/login'  # Check if redirected to login page after registration
 
 def test_register_duplicate_email(client):
     """Test registration with an email that already exists."""
     # First registration should succeed
     response1 = client.post('/register', data={
         'email': 'test@example.com',
-        'password': 'testpassword'
+        'password': 'Test@1234',
+        'confirm_password': 'Test@1234'
     })
 
     response2 = client.post('/register', data={
         'email': 'test@example.com',
-        'password': 'anotherpassword'
+        'password': 'Another@1234',
+        'confirm_password': 'Another@1234'
+
         })
     
     assert response2.status_code == 200  # Should return the registration page with an error
@@ -97,11 +102,12 @@ def test_login(client):
     # First, register a user to test login
     client.post('/register', data={
         'email': 'test@example.com',
-        'password': 'testpassword'
+        'password': 'Test@1234',
+        'confirm_password': 'Test@1234'
     })
     response = client.post('/login', data={
         'email': 'test@example.com',
-        'password': 'testpassword'
+        'password': 'Test@1234'
     })
     assert response.status_code == 302  # Expect a redirect after successful login
     assert response.location == '/'  # Check if redirected to home page
@@ -110,7 +116,8 @@ def test_login_invalid_credentials(client):
     """Test login with invalid credentials."""
     client.post('/register', data={
         'email': 'test@example.com',
-        'password': 'testpassword'
+        'password': 'Test@1234',
+        'confirm_password': 'Test@1234'
     })
 
     response = client.post('/login', data={
@@ -124,7 +131,7 @@ def test_login_invalid_credentials(client):
 def test_logout(client):
     """Test the user logout process."""
     # First, register and log in a user to test logout
-    response = register_and_login(client, "test@example.com", "testpassword")
+    response = register_and_login(client, "test@example.com", "Test@1234")
     assert response.status_code == 302  # Expect a redirect after successful login
     
     # Now test logout
@@ -145,7 +152,7 @@ def test_login_required_decorator(client):
 def test_unauthorized_delete(client):
     """Test that the login_required decorator allows access to delete only for authenticated users who own the item."""
     # First, register and log in a user to test item deletion
-    response = register_and_login(client, "test@example.com", "testpassword")
+    response = register_and_login(client, "test@example.com", "Test@1234")
 
     # Second, create an item to test deletion
     assert response.status_code == 302  # Expect a redirect after successful login
@@ -160,7 +167,7 @@ def test_unauthorized_delete(client):
 
     # Test unauthorized delete attempt by a different user
     client.post('/logout')  # Log out the first user
-    register_and_login(client, "random@example.com", "randompassword")
+    register_and_login(client, "random@example.com", "Random@1234")
 
     response = client.post(f'/delete/{item_id}',follow_redirects=True)
     assert response.status_code == 200  # Should return the items page with an error
@@ -170,7 +177,7 @@ def test_unauthorized_delete(client):
 def test_unauthorized_edit(client):
     """Test that the login_required decorator allows access to edit only for authenticated users who own the item."""
     # First, register and log in a user to test item deletion
-    response = register_and_login(client, "test@example.com", "testpassword")
+    response = register_and_login(client, "test@example.com", "Test@1234")
 
     # Second, create an item to test editing
     assert response.status_code == 302  # Expect a redirect after successful login
@@ -186,9 +193,22 @@ def test_unauthorized_edit(client):
 
     # Test unauthorized edit attempt by a different user
     client.post('/logout')  # Log out the first user
-    register_and_login(client, "random@example.com", "randompassword")
+    register_and_login(client, "random@example.com", "Random@1234")
 
     response = client.post(f'/edit/{item_id}',follow_redirects=True)
     assert response.status_code == 200  # Should return the items page with an error
 
     assert b"You are not authorized to edit this item." in response.data  # Check for error message in response
+
+def test_validate_email_and_password():
+    assert validate_email_and_password("test@example.com", "Test@1234") == True  # Valid email and password
+    with pytest.raises(ValueError):
+        validate_email_and_password("invalidemail", "Test@1234")  # Invalid email format
+    with pytest.raises(ValueError):
+        validate_email_and_password("test@example.com", "short")  # Invalid password
+    with pytest.raises(ValueError):
+        validate_email_and_password("", "Test@1234")  # Empty email
+    with pytest.raises(ValueError):
+        validate_email_and_password("test@example.com", "")  # Empty password
+    with pytest.raises(ValueError):
+        validate_email_and_password("test@example.com", "123328213231")  # no uppercase, lowercase, or special character

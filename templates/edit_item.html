@@ -16,7 +16,14 @@
 
         <div class="form-group">
             <label>Photos</label>
-            <input type="file" name="image_file" accept="image/*" value-="{{ item[3] }}" multiple>
+            {% if item[3] %}
+                <div style="margin-bottom: 10px;">
+                <p><strong>Current Image:</strong></p>
+                <img src="{{ item[3] }}" alt="Current item image" width="200">
+              </div>
+            {% endif %}
+            <input type="file" name="image_file" accept="image/*">
+            <small>Leave empty to keep current image</small>
         </div>
 
         <div class="form-group">
