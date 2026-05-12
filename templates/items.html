@@ -34,15 +34,17 @@
 {% if items %}
     <div class="items-grid">
         {% for item in items %}
-            <div class="item-card">
-                {% if item[3] %}
-                    <img src="{{ item[3] }}" alt="{{ item[1] }}" class="item-image">
-                {% endif %}
-                <p> {{ item[1] }}</p>
-               {#<p class="description"> {{ item[2] }}</p>  this will be be added inside#} 
-                <p class="price">${{ item[4] }}</p>
-            </div>
+        <div class="item-card">
 
+            {% if item[3] %}
+                <img src="{{ item[3] }}" alt="{{ item[1] }}" class="item-image">
+            {% endif %}
+            <p> {{ item[1] }}</p>
+            {#<p class="description"> {{ item[2] }}</p>  this will be be added inside#} 
+            <p class="price">${{ item[4] }}</p>
+        </div>
+
+        {% if current_email == item[5] %}
             <div class="button-group">
                 <form method="POST" action="/delete/{{ item[0] }}" onsubmit="return confirm('Are you sure you want to delete this item?');" style="display: inline;">
                     <button type="submit" class="btn btn-danger">Delete</button>
@@ -52,6 +54,7 @@
                     <button type="submit" class="btn btn-secondary">Edit</button>
                 </form>
             </div>
+        {% endif %}
         {% endfor %}
     </div>
 {% else %} 
