@@ -212,3 +212,42 @@ def test_validate_email_and_password():
         validate_email_and_password("test@example.com", "")  # Empty password
     with pytest.raises(ValueError):
         validate_email_and_password("test@example.com", "123328213231")  # no uppercase, lowercase, or special character
+
+def test_owner_see_edit_delete_buttons(client):
+    """Test that the owner of an item can see the edit and delete buttons."""
+    # First, register and log in a user to test item creation
+    response = register_and_login(client, "owner@example.com", "Owner@1234")
+
+    create_test_item(client, 'Owner Item', 'This is an item owned by the user.', '20.00')
+    response = client.get('/items')
+    assert response.status_code == 200  # Expect access to items page for authenticated user
+    assert b"Edit" in response.data  # Check if the edit button is present in the response
+    assert b"Delete" in response.data  # Check if the delete button is present in the response
+
+def test_non_owner_cannot_see_edit_delete_buttons(client):
+    """Test that a non-owner of an item cannot see the edit and delete buttons."""
+    # First, register and log in a user to test item creation
+    response = register_and_login(client, "owner@example.com", "Owner@1234")
+    create_test_item(client, 'Owner Item', 'This is an item owned by the user.', '20.00')
+    client.post('/logout')  # Log out the first user
+    
+    register_and_login(client, "random@example.com", "Random@1234")
+    response = client.get('/items')
+    assert response.status_code == 200  # Expect access to items page for authenticated user
+    assert b"Edit" not in response.data  # Check if the edit button is not present in the response
+    assert b"Delete" not in response.data  # Check if the delete button is not present in the response
+
+def test_item_card_structure(client):
+    """Test that item cards display correctly on the items page."""
+    # First, register and log in a user to test item creation
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Test Item', 'This is a test item.', '10.00')
+    
+    response = client.get('/items')
+    assert response.status_code == 200  # Expect access to items page for authenticated user
+
+    assert b"item-card" in response.data  # Check if the item card is present in the response
+    assert b"item-image" in response.data  # Check if the item image is present in the response
+    assert b"Test Item" in response.data  # Check if the item title is present in the response
+    assert b"$10.0" in response.data  # Check if the item price is present in the response
+
