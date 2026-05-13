@@ -213,7 +213,7 @@ def test_validate_email_and_password():
     with pytest.raises(ValueError):
         validate_email_and_password("test@example.com", "123328213231")  # no uppercase, lowercase, or special character
 
-def test_owner_see_edit_delete_buttons(client):
+def test_owner_sees_edit_delete_buttons(client):
     """Test that the owner of an item can see the edit and delete buttons."""
     # First, register and log in a user to test item creation
     response = register_and_login(client, "owner@example.com", "Owner@1234")
