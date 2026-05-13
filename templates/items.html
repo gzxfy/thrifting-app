@@ -3,33 +3,48 @@
 {% block content %}
 
 <h1>Sales</h1>
-<div class="form-card">
-    <h2>Add Item</h2>
-    <form action="/items" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label>Item Name</label>
-            <input type="text" name="title" placeholder="e.g., Vintage Lamp" required>
-        </div>
+<div class="items-container">
+    <div class="form-card">
+        <h2>Add Item</h2>
+        <form action="/items" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" name="title" placeholder="e.g., Vintage Lamp" required>
+            </div>
 
-        <div class="form-group">
-            <label>Description</label>
-            <textarea name="description" placeholder="e.g., small grey Nike t-shirt" required></textarea>
-        </div>
-        
-        <div class="form-group">
-            <label>Picture of the item</label>
-            <input type="file" name="image_file" accept="image/*" required>
-        </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" placeholder="e.g., small grey Nike t-shirt" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Picture of the item</label>
+                <input type="file" name="image_file" accept="image/*" required>
+            </div>
 
-        <div class="form-group">
-            <label>Price</label>
-            <input type="number" name="price" step="0.01" placeholder="$0.00" required>
+            <div class="form-group">
+                <label>Price</label>
+                <input type="number" name="price" step="0.01" placeholder="$0.00" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Add item</button>
+        </form>
+    </div>
+
+    <div class="items-wrapper">
+        <div class="search-sidebar">
+            <h3>Search Items</h3>
+            <form action="/search" method="GET">
+                <div class="form-group">
+                    <input type="text" name="query" placeholder="Search by title or description" required>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
         </div>
-        
-        <button type="submit" class="btn btn-primary">Add item</button>
-    </form>
+    </div>
 </div>
 
+<div class="items-grid-section">
 <h2>Sales in the area</h2>
 {% if items %}
     <div class="items-grid">
@@ -59,6 +74,7 @@
 {% else %} 
     <p>No Items found. Add some!</p>
 {% endif %}
+</div>
 
 <a href="/" class="btn btn-secondary">Back to Home</a>
 {% endblock %}
