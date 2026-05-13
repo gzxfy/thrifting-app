@@ -82,7 +82,7 @@ def items():
     c.execute("SELECT * FROM items")
     items_data = c.fetchall()
     conn.close()
-    return render_template('items.html', items=items_data)
+    return render_template('items.html', items=items_data, current_email=session.get('email'))
 
 
 # Delete and Edit routes, with authorization checks to ensure only the user who created the item can edit or delete it.
