@@ -213,7 +213,7 @@ def edit_item(item_id):
     conn.close()
     return render_template('edit_item.html', item=item_data)
 
-def migrated_add_created_at_column():
+def migrate_add_created_at_column():
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
 
@@ -235,6 +235,6 @@ def migrated_add_created_at_column():
 
 create_tables()
 init_db()
-migrated_add_created_at_column()
+migrate_add_created_at_column()
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
