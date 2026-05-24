@@ -229,8 +229,8 @@ def migrated_add_created_at_column():
     finally:
         conn.close()
 
+create_tables()
+init_db()
+migrated_add_created_at_column()
 if __name__ == '__main__':
-    create_tables()
-    init_db()
-    migrated_add_created_at_column()
     app.run(debug=True, port=5000)
