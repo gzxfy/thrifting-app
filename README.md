@@ -48,9 +48,12 @@ python -m venv venv
 venv\Scripts\activate   # Windows
 
 3. Install dependencies:
-pip install flask
+pip install flask python-dotenv
 
-4. Run the app:
+4. Configure environment variables:
+cp .env.example .env
+
+5. Run the app:
 python app.py
 
 ## Attribution

@@ -1,6 +1,7 @@
 from flask import session
 import pytest
 import sqlite3
+import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from validation_helpers import validate_email_and_password
 from app import app, init_db, create_tables
@@ -252,3 +253,80 @@ def test_item_card_structure(client):
     assert b"Test Item" in response.data  # Check if the item title is present in the response
     assert b"$10.00" in response.data  # Check if the item price is present in the response
 
+def test_high_to_low_sorting(client):
+    """Test that items are sorted from high to low price correctly."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Expensive Item', 'This is an expensive item.', '50.00')
+    create_test_item(client, 'Cheapest Item', 'This is the cheapest item.', '5.00')
+    create_test_item(client, 'Medium Item', 'This is a medium-priced item.', '25.00')
+
+    response = client.get('/items?sort_by=price_desc')
+    assert response.status_code == 200
+    assert response.data.find(b'Expensive Item') < response.data.find(b'Medium Item') < response.data.find(b'Cheapest Item')  # Check if items are sorted correctly
+
+def test_low_to_high_sorting(client):
+    """Test that items are sorted from low to high price correctly."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Expensive Item', 'This is an expensive item.', '50.00')
+    create_test_item(client, 'Cheapest Item', 'This is the cheapest item.', '5.00')
+    create_test_item(client, 'Medium Item', 'This is a medium-priced item.', '25.00')
+
+    response = client.get('/items?sort_by=price_asc')
+    assert response.status_code == 200
+    assert response.data.find(b'Cheapest Item') < response.data.find(b'Medium Item') < response.data.find(b'Expensive Item')  # Check if items are sorted correctly
+
+def test_newest_sorting(client):
+    """Test that items are sorted by newest correctly."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'First Created Item', 'This item was created first.', '10.00')
+    time.sleep(1)  # Ensure a time difference between item creations
+    create_test_item(client, 'Second Created Item', 'This item was created second.', '10.00')
+    time.sleep(1)  # Ensure a time difference between item creations
+    create_test_item(client, 'Third Created Item', 'This item was created third.', '10.00')
+
+    response = client.get('/items?sort_by=newest')
+    assert response.status_code == 200
+    
+    # Extract the items grid section only (after "Sales in the area")
+    html = response.data.decode('utf-8')
+    items_grid_start = html.find('Sales in the area')
+    items_grid = html[items_grid_start:]
+    
+    # Check order within the grid only
+    third_pos = items_grid.find('Third Created Item')
+    second_pos = items_grid.find('Second Created Item')
+    first_pos = items_grid.find('First Created Item')
+    
+    assert third_pos < second_pos < first_pos, f"Order wrong: Third={third_pos}, Second={second_pos}, First={first_pos}"
+
+def test_invalid_sorting(client):
+    """Test that invalid sorting parameters do not break the items page."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'First Default Item', 'This is the first default item.', '10.00')
+    create_test_item(client, 'Second Default Item', 'This is the second default item.', '20.00')
+    create_test_item(client, 'Third Default Item', 'This is the third default item.', '30.00')
+
+    response = client.get('/items?sort_by=invalid_sort')
+    assert response.status_code == 200  # Should still load the items page without sorting
+    assert b'First Default Item' in response.data
+    assert b'Second Default Item' in response.data
+    assert b'Third Default Item' in response.data
+    assert response.data.find(b'First Default Item') < response.data.find(b'Second Default Item') < response.data.find(b'Third Default Item')
+    assert b'sqlite' not in response.data.lower()
+    assert b'syntax error' not in response.data.lower()
+
+def test_clear_filters(client):
+    """Test that the clear filters button resets all filters and sorting."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Matching Item', 'This item matches the filter.', '10.00')
+    create_test_item(client, 'Outside Range Item', 'This item should be filtered out.', '30.00')
+
+    filtered_response = client.get('/items?query=item&min_price=5&max_price=15&sort_by=price_desc')
+    assert filtered_response.status_code == 200  # Should load the items page with filters applied
+    assert b'Matching Item' in filtered_response.data
+    assert b'Outside Range Item' not in filtered_response.data
+
+    cleared_response = client.get('/items')
+    assert cleared_response.status_code == 200
+    assert b'Matching Item' in cleared_response.data
+    assert b'Outside Range Item' in cleared_response.data
