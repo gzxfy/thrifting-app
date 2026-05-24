@@ -17,7 +17,13 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')
+secret_key = os.getenv('SECRET_KEY')
+if not secret_key:
+    secret_key = 'dev-secret-key-change-me'
+    app.logger.warning(
+        "SECRET_KEY environment variable is not set. Using an insecure development fallback key."
+    )
+app.secret_key = secret_key
 app.register_blueprint(auth_bp)
 
 # Set security headers to prevent caching, made with the help of ChatGPT
