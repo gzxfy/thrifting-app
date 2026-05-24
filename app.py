@@ -2,7 +2,11 @@ from flask import Flask, flash, render_template, request, redirect, session, url
 import sqlite3
 from werkzeug.utils import secure_filename
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs):
+        return False
 from auth import auth_bp, create_tables, login_required
 import validation_helpers
 load_dotenv()
