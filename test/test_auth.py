@@ -277,23 +277,42 @@ def test_low_to_high_sorting(client):
 def test_newest_sorting(client):
     """Test that items are sorted by newest correctly."""
     response = register_and_login(client, "test@example.com", "Test@1234")
-    create_test_item(client, 'Oldest Item', 'This is the oldest item.', '10.00')
-    create_test_item(client, 'Newest Item', 'This is the newest item.', '10.00')
-    create_test_item(client, 'Middle Item', 'This is a middle item.', '10.00')
+    create_test_item(client, 'First Created Item', 'This item was created first.', '10.00')
+    create_test_item(client, 'Second Created Item', 'This item was created second.', '10.00')
+    create_test_item(client, 'Third Created Item', 'This item was created third.', '10.00')
 
     response = client.get('/items?sort_by=newest')
     assert response.status_code == 200
+    assert response.data.find(b'Third Created Item') < response.data.find(b'Second Created Item') < response.data.find(b'First Created Item')
 
 def test_invalid_sorting(client):
     """Test that invalid sorting parameters do not break the items page."""
     response = register_and_login(client, "test@example.com", "Test@1234")
-    create_test_item(client, 'Test Item', 'This is a test item.', '10.00')
+    create_test_item(client, 'First Default Item', 'This is the first default item.', '10.00')
+    create_test_item(client, 'Second Default Item', 'This is the second default item.', '20.00')
+    create_test_item(client, 'Third Default Item', 'This is the third default item.', '30.00')
+
     response = client.get('/items?sort_by=invalid_sort')
     assert response.status_code == 200  # Should still load the items page without sorting
+    assert b'First Default Item' in response.data
+    assert b'Second Default Item' in response.data
+    assert b'Third Default Item' in response.data
+    assert response.data.find(b'First Default Item') < response.data.find(b'Second Default Item') < response.data.find(b'Third Default Item')
+    assert b'sqlite' not in response.data.lower()
+    assert b'syntax error' not in response.data.lower()
 
 def test_clear_filters(client):
     """Test that the clear filters button resets all filters and sorting."""
     response = register_and_login(client, "test@example.com", "Test@1234")
-    create_test_item(client, 'Test Item', 'This is a test item.', '10.00')
-    response = client.get('/items?query=test&min_price=5&max_price=15&sort_by=price_desc')
-    assert response.status_code == 200  # Should load the items page with filters applied
+    create_test_item(client, 'Matching Item', 'This item matches the filter.', '10.00')
+    create_test_item(client, 'Outside Range Item', 'This item should be filtered out.', '30.00')
+
+    filtered_response = client.get('/items?query=item&min_price=5&max_price=15&sort_by=price_desc')
+    assert filtered_response.status_code == 200  # Should load the items page with filters applied
+    assert b'Matching Item' in filtered_response.data
+    assert b'Outside Range Item' not in filtered_response.data
+
+    cleared_response = client.get('/items')
+    assert cleared_response.status_code == 200
+    assert b'Matching Item' in cleared_response.data
+    assert b'Outside Range Item' in cleared_response.data
