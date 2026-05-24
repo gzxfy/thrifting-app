@@ -37,3 +37,6 @@ static/uploads/
 # Flask
 instance/
 .webassets-cache
+
+# key
+SECRET_KEY = "olwdmodKeyForFBSURFAPp3n2s9v5l8a7t6y4z1x0"

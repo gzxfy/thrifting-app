@@ -33,18 +33,66 @@
 
     <div class="items-wrapper">
         <div class="search-sidebar">
-            <h3>Search Items</h3>
-            <form action="/search" method="GET">
-                <div class="form-group">
-                    <input type="text" name="query" placeholder="Search by title or description" required>
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </div>
-            </form>
+        <h3>Search & Filter</h3>
+        <form action="/items" method="GET">
+            <div class="form-group">
+                <label for="query">Search</label>
+                <input type="text" id="query" name="query" placeholder="Search by title or description" value="{{ active_filters.query }}">
+            </div>
+
+            <div class="form-group">
+                <label for="min_price">Min Price</label>
+                <input type="number" id="min_price" name="min_price" step="0.01" placeholder="Min" value="{{ active_filters.min_price }}">
+            </div>
+
+            <div class="form-group">
+                <label for="max_price">Max Price</label>
+                <input type="number" id="max_price" name="max_price" step="0.01" placeholder="Max" value="{{ active_filters.max_price }}">
+            </div>
+
+            <div class="form-group">
+                <label for="sort_by">Sort By</label>
+                <select id="sort_by" name="sort_by">
+                    <option value="">-- No Sort --</option>
+                    <option value="price_asc" {% if active_filters.sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if active_filters.sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="newest" {% if active_filters.sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="/items" class="btn btn-secondary">Clear Filters</a>
+        </form>
         </div>
     </div>
 </div>
 
 <div class="items-grid-section">
+    {% if active_filters.query or active_filters.min_price or active_filters.max_price or active_filters.sort_by %}
+    <div class="active-filters">
+        <h4>Active Filters:</h4>
+        <ul>
+            {% if active_filters.query %}
+                <li>Search: "{{ active_filters.query }}"</li>
+            {% endif %}
+            {% if active_filters.min_price %}
+                <li>Min Price: ${{ (active_filters.min_price) }}</li>
+            {% endif %}
+            {% if active_filters.max_price %}
+                <li>Max Price: ${{ (active_filters.max_price) }}</li>
+            {% endif %}
+            {% if active_filters.sort_by %}
+                <li>Sort By: 
+                    {% if active_filters.sort_by == 'price_asc' %}Price: Low to High{% endif %}
+                    {% if active_filters.sort_by == 'price_desc' %}Price: High to Low{% endif %}
+                    {% if active_filters.sort_by == 'newest' %}Newest First{% endif %}
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+    
 <h2>Sales in the area</h2>
 {% if items %}
     <div class="items-grid">

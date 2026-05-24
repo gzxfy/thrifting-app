@@ -11,7 +11,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
-app.secret_key = 'super-secret-key-12345'  
+app.secret_key = os.getenv('SECRET_KEY')
 app.register_blueprint(auth_bp)
 
 # Set security headers to prevent caching, made with the help of ChatGPT
@@ -32,7 +32,8 @@ def init_db():
             description TEXT NOT NULL,
             url TEXT,
             price REAL NOT NULL,
-            email TEXT NOT NULL
+            email TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
@@ -55,6 +56,12 @@ def items():
         title = request.form.get('title')
         description = request.form.get('description')
         price = request.form.get('price')
+        try:
+            price = float(price)
+        except (ValueError, TypeError):
+            flash("Price must be a valid number.", "danger")
+            conn.close()
+            return redirect(url_for('items'))
 
         url = request.form.get('image_url')  # Get the image URL from the form, if provided
         if 'image_file' in request.files:
@@ -76,14 +83,66 @@ def items():
         conn.commit()
         conn.close()
         return redirect(url_for('items'))
-
+    
+    where_clause, order_by_clause, params = build_filter_query(request.args)
     conn = sqlite3.connect('thrifting.db')
     c = conn.cursor()
-    c.execute("SELECT * FROM items")
+    query = f"SELECT * FROM items {where_clause} {order_by_clause}"
+    c.execute(query, params)
     items_data = c.fetchall()
     conn.close()
-    return render_template('items.html', items=items_data, current_email=session.get('email'))
+    
+    items_data = [(item[0], item[1], item[2], item[3], float(item[4]) if item[4] else 0, item[5], item[6] if len(item) > 6 else None) 
+                  for item in items_data
+                  ]
 
+    return render_template('items.html', items=items_data, current_email=session.get('email'), active_filters={
+        'query': request.args.get('query', ''),
+        'min_price': request.args.get('min_price', ''),
+        'max_price': request.args.get('max_price', ''),
+        'sort_by': request.args.get('sort_by', '')
+    })
+
+def build_filter_query(args):
+    where_clauses = []
+    params = []
+    # TEXT SEARCH
+    search_query = args.get('query', '').strip()
+    if search_query:
+        where_clauses.append("(title LIKE ? OR description LIKE ?)")
+        search_pattern = f"%{search_query}%"
+        params.extend([search_pattern, search_pattern])
+    # PRICE FILTERS
+    min_price = args.get('min_price')
+    if min_price:
+        try:            
+            min_price = float(min_price)
+            where_clauses.append("price >= ?")
+            params.append(min_price)
+        except ValueError:
+            pass  # Ignore invalid min_price input
+
+    max_price = args.get('max_price')
+    if max_price:
+        try:
+            max_price = float(max_price)
+            where_clauses.append("price <= ?")
+            params.append(max_price)
+        except ValueError:
+            pass  # Ignore invalid max_price input
+    
+    # SORTING
+    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    sort_by = args.get('sort_by', '').strip()
+    order_by_clause = ""
+    if sort_by == "price_asc":
+        order_by_clause = "ORDER BY price ASC"
+    elif sort_by == "price_desc":
+        order_by_clause = "ORDER BY price DESC"
+    elif sort_by == "newest":
+        order_by_clause = "ORDER BY created_at DESC"
+    return where_clause, order_by_clause, params
 
 # Delete and Edit routes, with authorization checks to ensure only the user who created the item can edit or delete it.
 @app.route("/delete/<int:item_id>", methods=["POST"])
@@ -148,7 +207,28 @@ def edit_item(item_id):
     conn.close()
     return render_template('edit_item.html', item=item_data)
 
+def migrated_add_created_at_column():
+    conn = sqlite3.connect('thrifting.db')
+    c = conn.cursor()
+
+    try:
+        c.execute("PRAGMA table_info(items)")
+        columns = [column[1] for column in c.fetchall()]
+
+        if 'created_at' not in columns:
+            c.execute("ALTER TABLE items ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+            c.execute("UPDATE items SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL")
+            conn.commit()
+            print("created_at column added successfully.")
+        else:
+            print("created_at column already exists.")
+    except Exception as e:
+        print(f"Error occurred while adding created_at column: {e}")
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
     create_tables()
     init_db()
+    migrated_add_created_at_column()
     app.run(debug=True, port=5000)
