@@ -1,6 +1,7 @@
 from flask import session
 import pytest
 import sqlite3
+import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from validation_helpers import validate_email_and_password
 from app import app, init_db, create_tables
@@ -278,12 +279,25 @@ def test_newest_sorting(client):
     """Test that items are sorted by newest correctly."""
     response = register_and_login(client, "test@example.com", "Test@1234")
     create_test_item(client, 'First Created Item', 'This item was created first.', '10.00')
+    time.sleep(1)  # Ensure a time difference between item creations
     create_test_item(client, 'Second Created Item', 'This item was created second.', '10.00')
+    time.sleep(1)  # Ensure a time difference between item creations
     create_test_item(client, 'Third Created Item', 'This item was created third.', '10.00')
 
     response = client.get('/items?sort_by=newest')
     assert response.status_code == 200
-    assert response.data.find(b'Third Created Item') < response.data.find(b'Second Created Item') < response.data.find(b'First Created Item')
+    
+    # Extract the items grid section only (after "Sales in the area")
+    html = response.data.decode('utf-8')
+    items_grid_start = html.find('Sales in the area')
+    items_grid = html[items_grid_start:]
+    
+    # Check order within the grid only
+    third_pos = items_grid.find('Third Created Item')
+    second_pos = items_grid.find('Second Created Item')
+    first_pos = items_grid.find('First Created Item')
+    
+    assert third_pos < second_pos < first_pos, f"Order wrong: Third={third_pos}, Second={second_pos}, First={first_pos}"
 
 def test_invalid_sorting(client):
     """Test that invalid sorting parameters do not break the items page."""
