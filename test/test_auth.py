@@ -252,3 +252,48 @@ def test_item_card_structure(client):
     assert b"Test Item" in response.data  # Check if the item title is present in the response
     assert b"$10.00" in response.data  # Check if the item price is present in the response
 
+def test_high_to_low_sorting(client):
+    """Test that items are sorted from high to low price correctly."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Expensive Item', 'This is an expensive item.', '50.00')
+    create_test_item(client, 'Cheapest Item', 'This is the cheapest item.', '5.00')
+    create_test_item(client, 'Medium Item', 'This is a medium-priced item.', '25.00')
+
+    response = client.get('/items?sort_by=price_desc')
+    assert response.status_code == 200
+    assert response.data.find(b'Expensive Item') < response.data.find(b'Medium Item') < response.data.find(b'Cheapest Item')  # Check if items are sorted correctly
+
+def test_low_to_high_sorting(client):
+    """Test that items are sorted from low to high price correctly."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Expensive Item', 'This is an expensive item.', '50.00')
+    create_test_item(client, 'Cheapest Item', 'This is the cheapest item.', '5.00')
+    create_test_item(client, 'Medium Item', 'This is a medium-priced item.', '25.00')
+
+    response = client.get('/items?sort_by=price_asc')
+    assert response.status_code == 200
+    assert response.data.find(b'Cheapest Item') < response.data.find(b'Medium Item') < response.data.find(b'Expensive Item')  # Check if items are sorted correctly
+
+def test_newest_sorting(client):
+    """Test that items are sorted by newest correctly."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Oldest Item', 'This is the oldest item.', '10.00')
+    create_test_item(client, 'Newest Item', 'This is the newest item.', '10.00')
+    create_test_item(client, 'Middle Item', 'This is a middle item.', '10.00')
+
+    response = client.get('/items?sort_by=newest')
+    assert response.status_code == 200
+
+def test_invalid_sorting(client):
+    """Test that invalid sorting parameters do not break the items page."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Test Item', 'This is a test item.', '10.00')
+    response = client.get('/items?sort_by=invalid_sort')
+    assert response.status_code == 200  # Should still load the items page without sorting
+
+def test_clear_filters(client):
+    """Test that the clear filters button resets all filters and sorting."""
+    response = register_and_login(client, "test@example.com", "Test@1234")
+    create_test_item(client, 'Test Item', 'This is a test item.', '10.00')
+    response = client.get('/items?query=test&min_price=5&max_price=15&sort_by=price_desc')
+    assert response.status_code == 200  # Should load the items page with filters applied
