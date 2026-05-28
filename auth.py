@@ -89,6 +89,7 @@ def login_required(f):
 @login_required
 def logout():
     session.pop('user_id', None)  # Remove user ID from session
+    session.pop('email', None)  # Remove email from session
     flash("You have been logged out.", "success")
     return redirect(url_for('home'))
 
