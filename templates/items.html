@@ -98,20 +98,20 @@
     <div class="items-grid">
         {% for item in items %}
         <div class="item-card">
-            {% if item[3] %}
-                <img src="{{ item[3] }}" alt="{{ item[1] }}" class="item-image">
+            {% if item.image_filename %}
+                <img src="{{ item.image_filename }}" alt="{{ item.title }}" class="item-image">
             {% endif %}
-            <p> {{ item[1] }}</p>
-            {#<p class="description"> {{ item[2] }}</p>  this will be be added inside#} 
-            <p class="price">${{ "%.2f"|format(item[4]) }}</p>
+            <p> {{ item.title }}</p>
+            {#<p class="description"> {{ item.description }}</p>  this will be be added inside#} 
+            <p class="price">${{ "%.2f"|format(item.price) }}</p>
             
-            {% if current_email == item[5] %}
+            {% if current_email == item.user.email %}
             <div class="button-group">
-                <form method="POST" action="/delete/{{ item[0] }}" onsubmit="return confirm('Are you sure you want to delete this item?');" style="display: inline;">
+                <form method="POST" action="/delete/{{ item.id }}" onsubmit="return confirm('Are you sure you want to delete this item?');" style="display: inline;">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
                 
-                <form method="GET" action="/edit/{{ item[0] }}" style="display: inline;">
+                <form method="GET" action="/edit/{{ item.id }}" style="display: inline;">
                     <button type="submit" class="btn btn-secondary">Edit</button>
                 </form>
             </div>

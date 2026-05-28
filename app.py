@@ -120,7 +120,7 @@ def items():
     elif sort_by == "price_desc":
         query = query.order_by(Item.price.desc())
     elif sort_by == "newest":
-        query = query.order_by(Item.created_at.desc())
+        query = query.order_by(Item.created_at.desc(), Item.id.desc())
     
     items_data = query.all()
 

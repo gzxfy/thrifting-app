@@ -3,23 +3,23 @@
 {% block content %}
 <h1>Edit Item</h1>
 <div class="form-card">
-    <form action="/edit/{{ item[0] }}" method="POST" enctype="multipart/form-data">
+    <form action="/edit/{{ item.id }}" method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label>Item Name</label>
-            <input type="text" name="title" value="{{ item[1] }}" required>
+            <input type="text" name="title" value="{{ item.title }}" required>
         </div>
 
         <div class="form-group">
             <label>Description</label>
-            <textarea name="description" required>{{ item[2] }}</textarea>
+            <textarea name="description" required>{{ item.description }}</textarea>
         </div>
 
         <div class="form-group">
             <label>Photos</label>
-            {% if item[3] %}
+            {% if item.image_filename %}
                 <div style="margin-bottom: 10px;">
                 <p><strong>Current Image:</strong></p>
-                <img src="{{ item[3] }}" alt="Current item image" width="200">
+                <img src="{{ item.image_filename }}" alt="Current item image" width="200">
               </div>
             {% endif %}
             <input type="file" name="image_file" accept="image/*">
@@ -28,7 +28,7 @@
 
         <div class="form-group">
             <label>Price</label>
-            <input type="number" name="price" step="0.01" value="{{ item[4] }}" placeholder="$0.00" required>
+            <input type="number" name="price" step="0.01" value="{{ item.price }}" placeholder="$0.00" required>
         </div>
 
         <button type="submit" class="btn btn-primary">Update Item</button>
