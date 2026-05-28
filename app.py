@@ -1,7 +1,9 @@
 from flask import Flask, flash, render_template, request, redirect, session, url_for
-import sqlite3
 from werkzeug.utils import secure_filename
+from models import db, User, Item
 import os
+from dotenv import load_dotenv
+
 try:
     from dotenv import load_dotenv
 except ImportError:
@@ -11,12 +13,22 @@ from auth import auth_bp, create_tables, login_required
 import validation_helpers
 load_dotenv()
 
+my_sql_password = os.getenv('MySQL_PASSWORD')
+my_sql_host = os.getenv('MySQL_HOST')
+my_sql_db = os.getenv('MySQL_DB')
+my_sql_user = os.getenv('MySQL_USER', 'root')
+
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
+# SQLAlchemy configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{my_sql_user}:{my_sql_password}@{my_sql_host}/{my_sql_db}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+
 secret_key = os.getenv('SECRET_KEY')
 if not secret_key:
     secret_key = 'dev-secret-key-change-me'
@@ -35,21 +47,8 @@ def set_response_headers(response):
     return response
 
 def init_db():
-    conn = sqlite3.connect('thrifting.db')
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            url TEXT,
-            price REAL NOT NULL,
-            email TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    with app.app_context():
+        db.create_all()
 
 #Home route, will most likely be changed to a landing page in the future, but for now it just redirects to the items page.
 @app.route('/')
@@ -219,28 +218,5 @@ def edit_item(item_id):
     conn.close()
     return render_template('edit_item.html', item=item_data)
 
-def migrate_add_created_at_column():
-    conn = sqlite3.connect('thrifting.db')
-    c = conn.cursor()
-
-    try:
-        c.execute("PRAGMA table_info(items)")
-        columns = [column[1] for column in c.fetchall()]
-
-        if 'created_at' not in columns:
-            c.execute("ALTER TABLE items ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-            c.execute("UPDATE items SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL")
-            conn.commit()
-            print("created_at column added successfully.")
-        else:
-            print("created_at column already exists.")
-    except Exception as e:
-        print(f"Error occurred while adding created_at column: {e}")
-    finally:
-        conn.close()
-
-create_tables()
-init_db()
-migrate_add_created_at_column()
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

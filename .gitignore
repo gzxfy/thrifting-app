@@ -6,6 +6,7 @@ __pycache__/
 .Python
 venv/
 env/
+*.pyc
 
 # Databases
 *.db
@@ -37,4 +38,5 @@ static/uploads/
 # Flask
 instance/
 .webassets-cache
+
 
