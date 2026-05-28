@@ -10,8 +10,8 @@
     <nav class="navbar">
         <div class="nav-links">
             <a href="/">Home</a>
-            {% if 'email' in session %}
-            <span class="nav-user">Logged in as {{ session['email'] }}</span>
+            {% if 'user_id' in session %}
+            <span class="nav-user">Logged in as {{ session.get('email') }}</span>
             <a href="/logout" class="logout-btn">Logout</a>
             {% else %}
             <a href="/login">Login</a>

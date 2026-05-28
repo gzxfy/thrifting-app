@@ -65,6 +65,7 @@ def login():
             user = User.query.filter_by(email=email).first()
             if user and check_password_hash(user.password_hash, password):
                 session['user_id'] = user.id  # Store user ID in session for later use   
+                session['email'] = user.email  # Store email in session for display purposes
                 flash("Login successful!", "success")
                 return redirect(url_for('home'))
             else:

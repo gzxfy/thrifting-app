@@ -32,6 +32,9 @@ if not secret_key:
         "SECRET_KEY environment variable is not set. Using an insecure development fallback key."
     )
 app.secret_key = secret_key
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  
 app.register_blueprint(auth_bp)
 
 # Set security headers to prevent caching, made with the help of ChatGPT
@@ -199,4 +202,5 @@ def edit_item(item_id):
     return render_template('edit_item.html', item=item_data)
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True, port=5000)
