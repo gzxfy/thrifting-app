@@ -1,16 +1,11 @@
 from flask import Flask, flash, render_template, request, redirect, session, url_for
 from werkzeug.utils import secure_filename
 from models import db, User, Item
+from auth import auth_bp, login_required
+import validation_helpers
 import os
 from dotenv import load_dotenv
 
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    def load_dotenv(*args, **kwargs):
-        return False
-from auth import auth_bp, create_tables, login_required
-import validation_helpers
 load_dotenv()
 
 my_sql_password = os.getenv('MySQL_PASSWORD')
@@ -24,6 +19,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app = Flask(__name__)
+
 # SQLAlchemy configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{my_sql_user}:{my_sql_password}@{my_sql_host}/{my_sql_db}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -59,9 +55,9 @@ def home():
 @app.route("/items", methods=["GET", "POST"])
 def items():
     if request.method == "POST":
-        email = session.get('email')  # Get the logged-in user's email from the session
-        if not email:
-            flash("You must be logged in to create an item.", "danger")
+        user = User.query.get(session.get('user_id'))
+        if not user:
+            flash("You must be logged in to add an item.", "danger")
             return redirect(url_for('auth.login'))
 
         title = request.form.get('title')
@@ -71,151 +67,135 @@ def items():
             price = float(price)
         except (ValueError, TypeError):
             flash("Price must be a valid number.", "danger")
-            conn.close()
             return redirect(url_for('items'))
 
-        url = request.form.get('image_url')  # Get the image URL from the form, if provided
+        image_filename = request.form.get('image_url')  # Get the image URL from the form, if provided
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
-                url = f'/static/uploads/{filename}'
+                image_filename = f'/static/uploads/{filename}'
 
         try:
-            validation_helpers.validate_item_data(title, description, price, url)
+            validation_helpers.validate_item_data(title, description, price, image_filename)
         except ValueError as ve:
             flash(str(ve), "danger")
             return redirect(url_for('items'))
 
-        conn = sqlite3.connect('thrifting.db')
-        c = conn.cursor()
-        c.execute("INSERT INTO items (title, description, url, price, email) VALUES (?, ?, ?, ?, ?)", (title, description, url, price, email))
-        conn.commit()
-        conn.close()
+        new_item = Item(title=title, description=description, price=price, image_filename=image_filename, user_id=user.id)
+        db.session.add(new_item)
+        db.session.commit()
         return redirect(url_for('items'))
     
-    where_clause, order_by_clause, params = build_filter_query(request.args)
-    conn = sqlite3.connect('thrifting.db')
-    c = conn.cursor()
-    query = f"SELECT * FROM items {where_clause} {order_by_clause}"
-    c.execute(query, params)
-    items_data = c.fetchall()
-    conn.close()
-    
-    items_data = [(item[0], item[1], item[2], item[3], float(item[4]) if item[4] else 0, item[5], item[6] if len(item) > 6 else None) 
-                  for item in items_data
-                  ]
+    # Build the base query and apply filters based on query parameters
+    query = Item.query
 
-    return render_template('items.html', items=items_data, current_email=session.get('email'), active_filters={
+    # TEXT SEARCH
+    search_query = request.args.get('query', '').strip()
+    if search_query:
+        query = query.filter((Item.title.contains(search_query)) | (Item.description.contains(search_query)))
+
+    # PRICE FILTERS
+    min_price = request.args.get('min_price')
+    if min_price:
+        try:            
+            min_price = float(min_price)
+            query = query.filter(Item.price >= min_price)
+        except ValueError:
+            pass  # Ignore invalid min_price input
+
+    max_price = request.args.get('max_price')
+    if max_price:
+        try:
+            max_price = float(max_price)
+            query = query.filter(Item.price <= max_price)
+        except ValueError:
+            pass  # Ignore invalid max_price input
+
+    # SORTING
+    sort_by = request.args.get('sort_by', '').strip()
+    if sort_by == "price_asc":
+        query = query.order_by(Item.price.asc())
+    elif sort_by == "price_desc":
+        query = query.order_by(Item.price.desc())
+    elif sort_by == "newest":
+        query = query.order_by(Item.created_at.desc())
+    
+    items_data = query.all()
+
+    # get the current user's email for display in the template, if logged in
+    current_email = None
+    if session.get('user_id'):
+        user = User.query.get(session.get('user_id'))
+        if user:
+            current_email = user.email
+
+    return render_template('items.html', items=items_data, current_email=current_email, active_filters={
         'query': request.args.get('query', ''),
         'min_price': request.args.get('min_price', ''),
         'max_price': request.args.get('max_price', ''),
         'sort_by': request.args.get('sort_by', '')
     })
 
-def build_filter_query(args):
-    where_clauses = []
-    params = []
-    # TEXT SEARCH
-    search_query = args.get('query', '').strip()
-    if search_query:
-        where_clauses.append("(title LIKE ? OR description LIKE ?)")
-        search_pattern = f"%{search_query}%"
-        params.extend([search_pattern, search_pattern])
-    # PRICE FILTERS
-    min_price = args.get('min_price')
-    if min_price:
-        try:            
-            min_price = float(min_price)
-            where_clauses.append("price >= ?")
-            params.append(min_price)
-        except ValueError:
-            pass  # Ignore invalid min_price input
-
-    max_price = args.get('max_price')
-    if max_price:
-        try:
-            max_price = float(max_price)
-            where_clauses.append("price <= ?")
-            params.append(max_price)
-        except ValueError:
-            pass  # Ignore invalid max_price input
-    
-    # SORTING
-    where_clause = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
-
-    sort_by = args.get('sort_by', '').strip()
-    order_by_clause = ""
-    if sort_by == "price_asc":
-        order_by_clause = "ORDER BY price ASC"
-    elif sort_by == "price_desc":
-        order_by_clause = "ORDER BY price DESC"
-    elif sort_by == "newest":
-        order_by_clause = "ORDER BY created_at DESC"
-    return where_clause, order_by_clause, params
-
 # Delete and Edit routes, with authorization checks to ensure only the user who created the item can edit or delete it.
 @app.route("/delete/<int:item_id>", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    conn = sqlite3.connect('thrifting.db')
-    c = conn.cursor()
-    
-    c.execute("SELECT email FROM items WHERE id = ?", (item_id,))
-    item = c.fetchone()
-    if not item or item[0] != session.get('email'):
+    user = User.query.get(session.get('user_id'))
+    if not user:
         flash("You are not authorized to delete this item.", "danger")
-        conn.close()
         return redirect(url_for('items'))
 
-    c.execute("DELETE FROM items WHERE id = ?", (item_id,))
-    conn.commit()
-    conn.close()
+    item = Item.query.get(item_id)
+    if not item or item.user_id != user.id:
+        flash("You are not authorized to delete this item.", "danger")
+        return redirect(url_for('items'))
+
+    db.session.delete(item)
+    db.session.commit()
     return redirect(url_for('items'))
 
 @app.route("/edit/<int:item_id>", methods=["GET", "POST"])
 @login_required
 def edit_item(item_id):
-    conn = sqlite3.connect('thrifting.db')
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM items WHERE id = ?", (item_id,))
-    item = c.fetchone()
-
-    if not item or item[5] != session.get('email'):
+    user = User.query.get(session.get('user_id'))
+    if not user:
         flash("You are not authorized to edit this item.", "danger")
-        conn.close()
+        return redirect(url_for('items'))
+    
+    item = Item.query.get(item_id)
+    if not item or item.user_id != user.id:
+        flash("You are not authorized to edit this item.", "danger")
         return redirect(url_for('items'))
 
     if request.method == "POST":
         title = request.form.get('title')
         description = request.form.get('description')
         price = request.form.get('price')
-        url = item[3]
+        image_filename = item.image_filename
 
         if 'image_file' in request.files:
             file = request.files['image_file']
             if file and file.filename:
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
-                url = f'/static/uploads/{filename}'
+                image_filename = f'/static/uploads/{filename}'
 
         try:
-            validation_helpers.validate_item_data(title, description, price, url)
+            validation_helpers.validate_item_data(title, description, price, image_filename)
         except ValueError as ve:
             flash(str(ve), "danger")
-            conn.close()
             return redirect(url_for('edit_item', item_id=item_id))
 
-        c.execute("UPDATE items SET title = ?, description = ?, url = ?, price = ? WHERE id = ?", (title, description, url, price, item_id))
-        conn.commit()
-        conn.close()
+        item.title = title
+        item.description = description
+        item.image_filename = image_filename
+        item.price = price
+        db.session.commit()
         return redirect(url_for('items'))
 
-    c.execute("SELECT * FROM items WHERE id = ?", (item_id,))
-    item_data = c.fetchone()
-    conn.close()
+    item_data = Item.query.get(item_id)
     return render_template('edit_item.html', item=item_data)
 
 if __name__ == '__main__':
